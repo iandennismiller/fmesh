@@ -60,11 +60,12 @@ def main():
         load_dotenv()
         # NOTE Overriding is always possible, otherwise we have to rely on gui.py
         if emesh.beaconingPrioritySettings:
-            print("[MAIN CYCLE] Terminal mode: getting beaconing from .env...")
+            #print("[MAIN CYCLE] Terminal mode: getting beaconing from .env...")
             emesh.beaconOn = (os.getenv('BEACONING')=="True")
         else:
-            print("[MAIN CYCLE] GUI mode: getting beaconing from GUI...")           
-        print(f"[MAIN CYCLE] Beaconing: {emesh.beaconOn}")
+            #print("[MAIN CYCLE] GUI mode: getting beaconing from GUI...")           
+            pass
+        #print(f"[MAIN CYCLE] Beaconing: {emesh.beaconOn}")
         # NOTE As the scenarios can include long range radios, we have low bandwidth.
         # By waiting N seconds between beacons, we ensure that we are not beaconing
         # too often and spamming the radio channel with beacons.
@@ -86,7 +87,8 @@ def main():
                 emesh.beacon()
                 print("[MAIN CYCLE] Beacon emitted. Proceeding to the next cycle...")
         else:
-            print("[MAIN CYCLE] Beaconing is not activated, proceeding...")
+            #print("[MAIN CYCLE] Beaconing is not activated, proceeding...")
+            pass
         # Sleep for N seconds
         # print("[MAIN CYCLE] Sleeping for " + os.getenv('SLEEP_INTERVAL') + " seconds")
         time.sleep(int(os.getenv('SLEEP_INTERVAL')))

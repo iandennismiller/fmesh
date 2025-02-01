@@ -6,6 +6,8 @@ import time
 from hashlib import sha256
 import keys
 import json
+from meshtastic import LOCAL_ADDR
+from meshtastic.util import message_to_json
 
 serial_port = None
 interface = None
@@ -20,9 +22,21 @@ connected = False
 
 msg_received = []
 
+localNode = None
+channelNames = []
+
+def getChannelName(index):
+    global localNode
+    try:
+        chan = localNode.getChannelByChannelIndex(index)
+        name = chan.settings.name
+        if chan.role == 1 and name == "":
+            name = "Default"
+        return name
+    except:
+        return None
+
 # NOTE Just an easy wrapper around sha256
-
-
 def hash(input):
     return sha256(input.encode('utf-8')).hexdigest()
 
@@ -35,11 +49,18 @@ def onReceive(packet, interface):
         decoded = packet["decoded"]
         decoded["from"] = packet["from"]
         decoded["to"] = packet["to"]
+        channel = 0
+        try:
+            channel = packet["channel"]
+        except:
+            pass
+        decoded["channel"] = channel
+        decoded["channel_name"] = getChannelName(channel)
     except:
         print("[ERROR] Could not decode packet: discarding it")
         return
         # ANCHOR We have received a packet and we decoded it
-    print(decoded)
+    print("--- decoded ---\n", decoded, "\n---")
     # Let's take the type of the packet
     packet_type = decoded["portnum"]
     print("Received packet type: " + packet_type)
@@ -47,12 +68,20 @@ def onReceive(packet, interface):
 
 
 def onConnection(interface, topic=pub.AUTO_TOPIC):
-    global connected
+    global connected, localNode
     # called when we (re)connect to the radio
     # defaults to broadcast, specify a destination ID if you wish
     connected = True
     theName = json.dumps(interface.getShortName())
-    interface.sendText(theName + " greets you!")
+    interface.showInfo()
+    interface.showNodes()
+    #print(repr(interface.getMyNodeInfo()))
+    localNode = interface.getNode(LOCAL_ADDR)
+    print(repr(localNode.channels))
+    for i in range(8):
+        print(i, getChannelName(i))
+    print("----------------------")
+    #interface.sendText(theName + " greets you!")
 
 # INFO Monitor and, if applicable, start beaconing using encrypted messages or plaintext messages
 
@@ -75,9 +104,9 @@ def beacon(encrypted=False):
     print("[BEACONING] Beacon sent: " + json.dumps(beacon))
 
 
-def sendRaw(raw):
+def sendRaw(raw, channel_id=0):
     print("[SEND RAW] Sending raw: " + raw)
-    interface.sendText(raw)
+    interface.sendText(raw, channelIndex = channel_id) # babor
     print("[SEND RAW] Raw sent: " + raw)
 
 

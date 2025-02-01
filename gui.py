@@ -1,9 +1,10 @@
+#!/usr/bin/env python3
 import json
 import os
 import time
 from textual.app import App, ComposeResult
 from textual.widgets import Header, Footer
-from textual.widgets import Input, Label, Pretty
+from textual.widgets import Input, Label, Pretty, DataTable
 from textual.widgets import Button, Static, RichLog, Sparkline, Checkbox
 from textual.containers import Horizontal, VerticalScroll
 from textual.validation import Function, Number, ValidationResult, Validator
@@ -19,6 +20,8 @@ class MeshTerm(App):
     stopWatchdog = False
     messageToShow = None
 
+    termConnected = False
+
     # INFO Composing the app
     def compose(self) -> ComposeResult:
         """Create child widgets for the app."""
@@ -26,34 +29,55 @@ class MeshTerm(App):
         yield Footer()
         # Inputs
 
-        yield Horizontal(VerticalScroll(
-            Label("Enter the serial port to connect to: "),
-            Input(placeholder="/dev/ttyUSB0", id="port"),
-            Button("Connect to radio", id="connect"),
-            Checkbox("Enable beaconing:", True, id="beaconingBox"),
-            
-        ),
-            VerticalScroll(
-                Label("Unknown Radio Name", id="radio_name"),
-                Label(""),
-                Input(placeholder="Send something...", id="msg"),
-                Button("Send", id="send", disabled=True)
-        ))
+        dataTable = DataTable(id="channels_table", cursor_type="row")
+        dataTable.add_column("#")
+        dataTable.add_column("Channel name")
         
-        yield Horizontal(VerticalScroll(
-            Button("Exit", id="exit"),
-            Label("CONNECTED RADIO INFO"),
+
+        messages = VerticalScroll(
+                Label("Unknown Radio Name", id="radio_name"),
+                Horizontal(
+                    Input(placeholder="Send something...", id="msg", restrict=r"^$|[0-9]|[0-9]#.*"),
+                    Button("Send", id="send", disabled=True),
+                    id="input-field"),
+
+                VerticalScroll(
+                    #Sparkline([1, 2, 3, 3, 3, 3, 3], summary_function=min,),
+                    Label("Received messages:"),
+                    RichLog(id="received_messages", auto_scroll=True),
+                    classes="messages-panel"
+                    ),
+                classes="right-top-panel")
+
+
+        yield Horizontal(
             VerticalScroll(
-                Label("No radio connected", id="radio_namebox"),
-                Label("", id="radio_id"),
-                Label("", id="radio_user"),
+                VerticalScroll(
+                    Label("Enter the serial port to connect to: "),
+                    Input(placeholder="/dev/ttyUSB0", id="port"),
+                    Horizontal(
+                        Button("Connect to radio", id="connect"),
+                        Button("Exit", id="exit"),
+                        Checkbox("Enable beaconing", False, id="beaconingBox")),
+                    ),
+
+                VerticalScroll(
+                    Label(""),
+                    Label("CONNECTED RADIO INFO"),
+                    VerticalScroll(
+                        Label("No radio connected", id="radio_namebox"),
+                        Label("", id="radio_id"),
+                        Label("", id="radio_user"),
+                        dataTable
+                        ),
+                    ),
+                classes="left-top-panel"
+                ),
+
+                messages
+
             )
-        ),
-            VerticalScroll(
-            Sparkline([1, 2, 3, 3, 3, 3, 3], summary_function=min,),
-            Label("Received messages:"),
-            RichLog(id="received_messages", auto_scroll=True)
-        ))
+                
         yield Label("", id="message_to_show")
         yield Sparkline([1, 2, 3, 3, 3, 3, 3, 3, 4, 4, 5, 5, 6, 5, 5, 4, 4, 3, 3, 3, 3, 3, 3, 3, 2, 1], summary_function=min,)
         # Main log
@@ -68,6 +92,13 @@ class MeshTerm(App):
     def on_key(self, event: events.Key) -> None:
         """Handle key events."""
         pass
+
+    def on_input_submitted(self, event: Input.Submitted) -> None:
+        source = str(event.input.id).lower()
+        if source == "msg":
+            self.send()
+        else:
+            pass
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         """Handle button events."""
@@ -90,12 +121,16 @@ class MeshTerm(App):
         if not term.emesh.connected:
             self.messageToShow = "CANNOT SEND MESSAGE: No connection"
             return
-        textToSend = self.query_one("#msg").value
-        term.emesh.sendRaw(textToSend)
-        self.query_one("#msg").value = ""
-        self.messageToShow = "MESSAGE SENT: " + textToSend
+        chan, textToSend = self.query_one("#msg").value.split('#')
+        try:
+            chan = int(chan)
+        except:
+            chan = 0
+        term.emesh.sendRaw(textToSend, chan)
+        self.query_one("#msg").value = f"{chan}#"
+        self.messageToShow = f"MESSAGE SENT: #{chan} " + textToSend
         self.query_one("#main_log").write(self.messageToShow)
-        self.query_one("#received_messages").write("[You] > " + textToSend)
+        self.query_one("#received_messages").write(f"[You] #{chan} > " + textToSend)
     
     # INFO Managing connection to the device
     def connect(self):
@@ -158,25 +193,46 @@ class MeshTerm(App):
                 self.change_value("#message_to_show", messageToShow)
                 # If we are connected we should get our variables
                 if term.emesh.connected:
-                    name = term.emesh.interface.getShortName()
-                    self.query_one("#connect").disabled = False
-                    self.query_one("#connect").value = "Reconnect"
-                    self.query_one("#radio_name").update(f"Connected to: {name}")
-                    self.query_one("#send").disabled = False
-                    # Also updating our infos
-                    self.query_one("#radio_namebox").update(f"Radio NAME: {name}")
-                    self.query_one("#radio_id").update(
-                        f"Radio ID (long name): {str(term.emesh.interface.getLongName())}"
-                    )
-                    self.query_one("#radio_user").update(
-                        f"Radio USER: {str(term.emesh.interface.getMyUser())}"
-                    )
+                    if not self.termConnected:
+                        name = term.emesh.interface.getShortName()
+                        self.query_one("#connect").disabled = False
+                        self.query_one("#connect").value = "Reconnect"
+                        self.query_one("#radio_name").update(f"Connected to: {name}")
+                        self.query_one("#send").disabled = False
+                        # Also updating our infos
+                        self.query_one("#radio_namebox").update(f"Radio NAME: {name}")
+                        self.query_one("#radio_id").update(
+                            f"Radio ID (long name): {str(term.emesh.interface.getLongName())}"
+                        )
+                        self.query_one("#radio_user").update(
+                            f"Radio USER: {str(term.emesh.interface.getMyUser())}"
+                        )
+
+                        chantable = self.query_one("#channels_table")
+                        for chan_id in range(8):
+                            chan_name = term.emesh.getChannelName(chan_id)
+                            if chan_name != None and len(chan_name) > 0:
+                                chantable.add_row(str(chan_id), chan_name)
+
+                self.termConnected = term.emesh.connected
+
+                    
                 # Populating the received messages
                 for receivd in term.emesh.msg_received:
                     if receivd["portnum"] == "TEXT_MESSAGE_APP":
-                        headerMessage = "[" + str(receivd["from"]) + " -> " + str(receivd["to"]) + "] > " 
+                        #headerMessage = "[" + hex(receivd["from"]) + " -> " + hex(receivd["to"]) + "] > " 
+                        sender = hex(receivd["from"])[2:]
+                        to = hex(receivd["to"])[2:]
+                        if to != "ffffffff":
+                            to = " -> " + to
+                        else:
+                            to = ""
+                        chan = receivd["channel"]
+                        chan_name = receivd["channel_name"]
+                        headerMessage = f"[!{sender}{to}] #{chan}:{chan_name} > "
                         textToShow = headerMessage + receivd["text"]
                         self.query_one("#received_messages").write(textToShow)
+                        #self.query_one("#received_messages").write(repr(receivd))
                 term.emesh.msg_received = []
             except Exception as e:
                 self.change_value("#message_to_show", "ERROR: " + str(e))
