@@ -1,3 +1,5 @@
 *.key
 *.pem
+*.swp
 textual
+__pycache__
