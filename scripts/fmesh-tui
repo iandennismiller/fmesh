@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
-from fmesh.tui import MeshTerm
+from fmesh.tui import FMeshTUI
 
 
 if __name__ == "__main__":
-    app = MeshTerm()
+    app = FMeshTUI()
     app.run()

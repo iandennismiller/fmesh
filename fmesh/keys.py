@@ -7,7 +7,7 @@ from cryptography.hazmat.primitives.asymmetric import ed25519
 from cryptography.hazmat.primitives import serialization
 
 
-class MeshKeys:
+class FMeshKeys:
     def __init__(self):
         # NOTE Identity keys
         self.privateKey = None
@@ -58,7 +58,7 @@ class MeshKeys:
 
         # Loading key
         try:
-            self.loadBytes(privateBytes)
+            self.loadBytes(self.privateBytes)
             print("[ED25519] Loaded ed25519 private key from file [+]")
         except Exception as e:
             print("[ED25519] Could not load ed25519 private key: [X]")

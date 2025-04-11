@@ -9,13 +9,13 @@ import meshtastic.serial_interface
 from meshtastic import LOCAL_ADDR
 from meshtastic.util import message_to_json
 
-from .keys import MeshKeys
+from .keys import FMeshKeys
 
 
-class MeshNetwork:
+class FMeshNetwork:
     def __init__(self):
         # Ensuring we have an identity
-        self.keys = MeshKeys()
+        self.keys = FMeshKeys()
 
         self.interface = None
 

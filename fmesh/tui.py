@@ -17,7 +17,7 @@ from dotenv import load_dotenv
 from . import FMesh
 
 
-class MeshTerm(App):
+class FMeshTUI(App):
     # CSS_PATH = "meshterm.tcss"
 
     def __init__(self, *args, **kwargs):

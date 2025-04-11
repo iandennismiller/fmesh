@@ -3,7 +3,7 @@ import time
 
 from dotenv import load_dotenv
 
-from fmesh.network import MeshNetwork
+from fmesh.network import FMeshNetwork
 
 
 import builtins as __builtin__
@@ -36,7 +36,7 @@ class FMesh:
 
         print(self.vars['port'])
 
-        self.mesh_network = MeshNetwork()
+        self.mesh_network = FMeshNetwork()
         self.mesh_network.connect(self.vars['port'])
 
         print("[LOADER] Initialized")
