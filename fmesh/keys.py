@@ -10,16 +10,16 @@ from cryptography.hazmat.primitives import serialization
 class FMeshKeys:
     def __init__(self):
         # NOTE Identity keys
-        self.privateKey = None
-        self.privateBytes = None
-        self.publicKey = None
-        self.publicBytes = None
+        self.private_key = None
+        self.private_bytes = None
+        self.public_key = None
+        self.public_bytes = None
 
         # NOTE Encryption keys
-        self.privateRSAKey = None
-        self.privateRSAPEM = None
-        self.publicRSAKey = None
-        self.publicRSAPEM = None
+        self.private_rsa_key = None
+        self.private_rsa_pem = None
+        self.public_rsa_key = None
+        self.public_rsa_pem = None
 
         if os.path.exists("private.key"):
             print("[ED25519] Loading ed25519 private key...")
@@ -32,18 +32,18 @@ class FMeshKeys:
         "ED25519 Creation"
         print("[ED25519] Generating ed25519 identity...")
 
-        self.privateKey = ed25519.Ed25519PrivateKey.generate() 
-        print(self.privateKey)
+        self.private_key = ed25519.Ed25519PrivateKey.generate() 
+        print(self.private_key)
 
-        self.privateBytes = self.privateKey.private_bytes(
+        self.private_bytes = self.private_key.private_bytes(
             encoding=serialization.Encoding.Raw,
             format=serialization.PrivateFormat.Raw,
             encryption_algorithm=serialization.NoEncryption()
         )
-        print(self.privateBytes.hex())
+        print(self.private_bytes.hex())
 
         # Public Key Creation
-        self.publicDerivation()
+        self.public_derivation()
 
         # RSA Creation
         self.derive()
@@ -53,96 +53,96 @@ class FMeshKeys:
 
     def load(self, filepath="./"):
         # Reading file
-        with open(filepath + "private.key", "rb") as keyFile:
-            self.privateBytes = keyFile.read()
+        with open(filepath + "private.key", "rb") as key_file:
+            self.private_bytes = key_file.read()
 
         # Loading key
         try:
-            self.loadBytes(self.privateBytes)
+            self.load_bytes(self.private_bytes)
             print("[ED25519] Loaded ed25519 private key from file [+]")
         except Exception as e:
             print("[ED25519] Could not load ed25519 private key: [X]")
             print(e)
             exit()
             
-    def loadBytes(self, privateBytesProvided: bytes):
-        "INFO privateBytesProvided must be the same kind of data as the privateBytes (aka bytes)"
+    def load_bytes(self, private_bytes_provided: bytes):
+        "INFO private_bytes_provided must be the same kind of data as the private_bytes (aka bytes)"
 
         print("[ED25519] Loading ed25519 private key from bytes... [*]")
-        self.privateKey = ed25519.Ed25519PrivateKey.from_private_bytes(privateBytesProvided)
+        self.private_key = ed25519.Ed25519PrivateKey.from_private_bytes(private_bytes_provided)
         print("[ED25519] Loaded ed25519 private key from bytes [+]")
 
         # Public Key Creation
-        self.publicDerivation()
+        self.public_derivation()
 
         # RSA Creation
         self.derive()
         
-    def publicDerivation(self):
+    def public_derivation(self):
         "INFO Deriving a public key from the private key"
 
         print("[ED25519] Generating ed25519 public key...[*]")
-        self.publicKey = self.privateKey.public_key()
+        self.public_key = self.private_key.public_key()
         
-        self.publicBytes = self.publicKey.public_bytes(
+        self.public_bytes = self.public_key.public_bytes(
             encoding=serialization.Encoding.Raw,
             format=serialization.PublicFormat.Raw,
         )
 
-        print("[ED25519] We are: " + self.publicBytes.hex())
+        print("[ED25519] We are: " + self.public_bytes.hex())
         print("[ED25519] Generated ed25519 public key [+]")
         
     def derive(self):
         "RSA Derivation"
         print("[RSA] Generating RSA keys from ed25519 identity... [*]")
-        self.privateRSAKey = rsa.generate_key(self.privateBytes.hex()) # So that the two are linked
-        self.privateRSAPEM = self.privateRSAKey.exportKey("PEM")
-        self.publicRSAKey = self.privateRSAKey.public_key()
-        self.publicRSAPEM = self.publicRSAKey.exportKey("PEM")
+        self.private_rsa_key = rsa.generate_key(self.private_bytes.hex()) # So that the two are linked
+        self.private_rsa_pem = self.private_rsa_key.exportKey("PEM")
+        self.public_rsa_key = self.private_rsa_key.public_key()
+        self.public_rsa_pem = self.public_rsa_key.exportKey("PEM")
 
         print("[RSA] Generated RSA keys from ed25519 identity [+]")
 
-    def encrypt(self, message, publicKey=None):
+    def encrypt(self, message, public_key=None):
         "Encrypting a message (returning bytes)"
 
         # Supporting self encryption
-        if not publicKey:
-            publicKey = self.publicRSAKey
+        if not public_key:
+            public_key = self.public_rsa_key
 
         # Generating the encrypted message
-        encrypted = rsa.encrypt(message, publicKey)
+        encrypted = rsa.encrypt(message, public_key)
         return encrypted
 
-    def decrypt(self, message, privateKey=None):
+    def decrypt(self, message, private_key=None):
         "Decrypting a message (returning bytes)"
 
         # Supporting self decryption by default
-        if not privateKey:
-            privateKey = self.privateRSAKey
+        if not private_key:
+            private_key = self.private_rsa_key
 
         # Generating the decrypted message
-        decrypted = rsa.decrypt(message, privateKey)
+        decrypted = rsa.decrypt(message, private_key)
         return decrypted
 
     def sign(self, message):
         "Sign a message after encoding it (returning bytes)"
 
-        signature = self.privateKey.sign(message.encode('utf-8'))
+        signature = self.private_key.sign(message.encode('utf-8'))
         return signature
 
-    def verify(self, message, signature, publicKeyProvided=None):
+    def verify(self, message, signature, public_key_provided=None):
         "Verify a message (returning boolean)"
 
         # Supporting self verification
-        if not publicKeyProvided:
-            publicKeyProvided = self.publicKey
+        if not public_key_provided:
+            public_key_provided = self.public_key
 
         # Generating the verified result
-        return publicKeyProvided.verify(signature, message.encode('utf-8'))
+        return public_key_provided.verify(signature, message.encode('utf-8'))
 
     def save(self):
         "ANCHOR Utilities"
 
         print("[ED25519] Saving ed25519 key...")
         with open("private.key", "wb") as f:
-            f.write(self.privateBytes)
+            f.write(self.private_bytes)

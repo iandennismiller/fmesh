@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import os
 import json
 import time
@@ -40,28 +39,27 @@ class FMeshTUI(App):
         dataTable.add_column("#")
         dataTable.add_column("Channel name")
         
-
         messages = VerticalScroll(
-                Label("Unknown Radio Name", id="radio_name"),
-                Horizontal(
-                    Input(
-                        id="input-field", # or msg?
-                        placeholder="Send something...",
-                        restrict=r"^$|[0-9]|[0-9]#.*"),
-                        Button(
-                            "Send",
-                            id="send",
-                            disabled=True
-                        ),
+            Label("Unknown Radio Name", id="radio_name"),
+            Horizontal(
+                Input(
+                    id="input-field", # or msg?
+                    placeholder="Send something...",
+                    restrict=r"^$|[0-9]|[0-9]#.*"),
+                    Button(
+                        "Send",
+                        id="send",
+                        disabled=True
                     ),
+                ),
 
-                VerticalScroll(
-                    #Sparkline([1, 2, 3, 3, 3, 3, 3], summary_function=min,),
-                    Label("Received messages:"),
-                    RichLog(id="received_messages", auto_scroll=True),
-                    classes="messages-panel"
-                    ),
-                classes="right-top-panel")
+            VerticalScroll(
+                #Sparkline([1, 2, 3, 3, 3, 3, 3], summary_function=min,),
+                Label("Received messages:"),
+                RichLog(id="received_messages", auto_scroll=True),
+                classes="messages-panel"
+                ),
+            classes="right-top-panel")
 
         yield Horizontal(
             VerticalScroll(
@@ -86,9 +84,7 @@ class FMeshTUI(App):
                     ),
                 classes="left-top-panel"
                 ),
-
                 messages
-
             )
                 
         yield Label("", id="message_to_show")
