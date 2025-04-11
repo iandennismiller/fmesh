@@ -97,7 +97,3 @@ def main():
         # print("[MAIN CYCLE] Sleeping complete. Proceeding to the next cycle...")
         
 print("[SYSTEM] Ready to start.")
-
-
-if __name__ == "__main__":
-    main()

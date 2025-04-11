@@ -6,10 +6,11 @@ from pubsub import pub
 
 import meshtastic
 import meshtastic.serial_interface
+
 from meshtastic import LOCAL_ADDR
 from meshtastic.util import message_to_json
 
-import fmesh.keys as keys
+from fmesh.keys import MeshKeys
 
 
 serial_port = None
@@ -123,7 +124,8 @@ def connect(serialPort=None):
     global serial_port
     global interface
     # Ensuring we have an identity
-    keys.ensure()
+    keys = MeshKeys()
+
     # Connecting to the radio
     serial_port = serialPort
     pub.subscribe(onReceive, "meshtastic.receive")
