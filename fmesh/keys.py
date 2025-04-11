@@ -1,5 +1,6 @@
-import rsa
 import os
+
+import rsa
 
 # LINK https://cryptography.io/en/latest/hazmat/primitives/asymmetric/ed25519/
 from cryptography.hazmat.primitives.asymmetric import ed25519
@@ -32,7 +33,7 @@ class MeshKeys:
         print("[ED25519] Generating ed25519 identity...")
 
         self.privateKey = ed25519.Ed25519PrivateKey.generate() 
-        print(privateKey)
+        print(self.privateKey)
 
         self.privateBytes = self.privateKey.private_bytes(
             encoding=serialization.Encoding.Raw,

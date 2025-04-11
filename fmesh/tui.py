@@ -4,26 +4,30 @@ import json
 import time
 import threading
 
+from textual import events, on
 from textual.app import App, ComposeResult
 from textual.widgets import Header, Footer
 from textual.widgets import Input, Label, Pretty, DataTable
 from textual.widgets import Button, Static, RichLog, Sparkline, Checkbox
 from textual.containers import Horizontal, VerticalScroll
 from textual.validation import Function, Number, ValidationResult, Validator
-from textual import events, on
 
 from dotenv import load_dotenv
 
-import fmesh.term as term
+from . import FMesh
 
 
 class MeshTerm(App):
     # CSS_PATH = "meshterm.tcss"
 
-    stopWatchdog = False
-    messageToShow = None
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
-    termConnected = False
+        self.stop_watchdog = False
+        self.term_connected = False
+        self.message_to_show = None
+
+        self.fmesh = FMesh()
 
     # INFO Composing the app
     def compose(self) -> ComposeResult:
@@ -40,9 +44,16 @@ class MeshTerm(App):
         messages = VerticalScroll(
                 Label("Unknown Radio Name", id="radio_name"),
                 Horizontal(
-                    Input(placeholder="Send something...", id="msg", restrict=r"^$|[0-9]|[0-9]#.*"),
-                    Button("Send", id="send", disabled=True),
-                    id="input-field"),
+                    Input(
+                        id="input-field", # or msg?
+                        placeholder="Send something...",
+                        restrict=r"^$|[0-9]|[0-9]#.*"),
+                        Button(
+                            "Send",
+                            id="send",
+                            disabled=True
+                        ),
+                    ),
 
                 VerticalScroll(
                     #Sparkline([1, 2, 3, 3, 3, 3, 3], summary_function=min,),
@@ -51,7 +62,6 @@ class MeshTerm(App):
                     classes="messages-panel"
                     ),
                 classes="right-top-panel")
-
 
         yield Horizontal(
             VerticalScroll(
@@ -109,8 +119,8 @@ class MeshTerm(App):
         action = str(event.button.id).lower()
         if action == "exit":
             try:
-                term.forceQuit = True
-                self.stopWatchdog = True
+                self.fmesh.force_quit = True
+                self.stop_watchdog = True
             except:
                 print("[SYSTEM] Failed to stop thread")
             exit(1)
@@ -121,35 +131,43 @@ class MeshTerm(App):
 
     # INFO Sending a message to the device
     def send(self):
-        if not term.emesh.connected:
-            self.messageToShow = "CANNOT SEND MESSAGE: No connection"
+        if not self.fmesh.mesh_network.connected:
+            self.message_to_show = "CANNOT SEND MESSAGE: No connection"
             return
+
         chan, textToSend = self.query_one("#msg").value.split('#')
+
         try:
             chan = int(chan)
         except:
             chan = 0
-        term.emesh.sendRaw(textToSend, chan)
+
+        self.fmesh.mesh_network.send_raw(textToSend, chan)
         self.query_one("#msg").value = f"{chan}#"
-        self.messageToShow = f"MESSAGE SENT: #{chan} " + textToSend
-        self.query_one("#main_log").write(self.messageToShow)
+        self.message_to_show = f"MESSAGE SENT: #{chan} " + textToSend
+        self.query_one("#main_log").write(self.message_to_show)
         self.query_one("#received_messages").write(f"[You] #{chan} > " + textToSend)
     
     # INFO Managing connection to the device
     def connect(self):
         self.query_one("#connect").disabled = True
         self.query_one("#connect").value = "CONNECTING..."
+
         self.port = self.query_one("#port").value
         self.port = self.port.strip()
-        self.messageToShow = "CONNECTING TO " + self.port + "..."
+
+        self.message_to_show = "CONNECTING TO " + self.port + "..."
+
         if not self.port or self.port == "":
             self.port = None
-        self.instance = threading.Thread(target=term.main)
+
+        # start FMesh in a background thread
+        # It will be controlled by this TUI
+        self.instance = threading.Thread(target=self.fmesh.main)
         self.instance.start()
 
     def change_value(self, id, replacement):
         self.query_one(id).update(replacement)
-    # !SECTION Actions
     
     def loadEnv(self):
         self.env = {}
@@ -168,60 +186,63 @@ class MeshTerm(App):
             f.write(preparedEnv)
             f.flush()
         return self.env
-            
 
     def watcher(self):
-        while not self.stopWatchdog:
-            time.sleep(1)
+        while not self.stop_watchdog:
             # Refreshing the environment variables and setting ours if needed
             try:
-                term.emesh.beaconingPrioritySettings = False
-                term.emesh.beaconOn = self.query_one("#beaconingBox").value
+                self.fmesh.mesh_network.beaconing_priority_settings = False
+                self.fmesh.mesh_network.beacon_on = self.query_one("#beaconingBox").value
                 print("[WATCHDOG] Refreshing environment variables...")
-                os.environ['BEACONING'] = str(term.emesh.beaconOn)
+                os.environ['BEACONING'] = str(self.fmesh.mesh_network.beacon_on)
                 print("[WATCHDOG] Environment variables refreshed: " + str(os.environ['BEACONING']))
             except Exception as e:
                 print("[WARNING] beaconingBox element is not reachable - this may be temporary.")
+
             # Loading messages into the gui
             try:
                 if (term.outputs != term.last_output):
                     term.last_output = term.outputs
                     self.query_one("#main_log").write(term.outputs)
+
                 # Priority to us here
-                if (self.messageToShow):
-                    messageToShow = self.messageToShow
-                    self.messageToShow = None
+                if (self.message_to_show):
+                    _message_to_show = self.message_to_show
+                    self.message_to_show = None
                 else:
-                    messageToShow = term.messageToShow
-                self.change_value("#message_to_show", messageToShow)
+                    _message_to_show = self.message_to_show
+
+                self.change_value("#message_to_show", _message_to_show)
+
                 # If we are connected we should get our variables
-                if term.emesh.connected:
-                    if not self.termConnected:
-                        name = term.emesh.interface.getShortName()
+                if self.fmesh.mesh_network.connected:
+                    if not self.term_connected:
+                        name = self.fmesh.mesh_network.interface.getShortName()
+
                         self.query_one("#connect").disabled = False
                         self.query_one("#connect").value = "Reconnect"
                         self.query_one("#radio_name").update(f"Connected to: {name}")
                         self.query_one("#send").disabled = False
+
                         # Also updating our infos
                         self.query_one("#radio_namebox").update(f"Radio NAME: {name}")
                         self.query_one("#radio_id").update(
-                            f"Radio ID (long name): {str(term.emesh.interface.getLongName())}"
+                            f"Radio ID (long name): {str(self.fmesh.mesh_network.interface.getLongName())}"
                         )
                         self.query_one("#radio_user").update(
-                            f"Radio USER: {str(term.emesh.interface.getMyUser())}"
+                            f"Radio USER: {str(self.fmesh.mesh_network.interface.getMyUser())}"
                         )
 
                         chantable = self.query_one("#channels_table")
                         for chan_id in range(8):
-                            chan_name = term.emesh.getChannelName(chan_id)
+                            chan_name = self.fmesh.mesh_network.get_channel_name(chan_id)
                             if chan_name != None and len(chan_name) > 0:
                                 chantable.add_row(str(chan_id), chan_name)
 
-                self.termConnected = term.emesh.connected
-
+                self.term_connected = self.fmesh.mesh_network.connected
                     
                 # Populating the received messages
-                for receivd in term.emesh.msg_received:
+                for receivd in self.fmesh.mesh_network.msg_received:
                     if receivd["portnum"] == "TEXT_MESSAGE_APP":
                         #headerMessage = "[" + hex(receivd["from"]) + " -> " + hex(receivd["to"]) + "] > " 
                         sender = hex(receivd["from"])[2:]
@@ -236,6 +257,10 @@ class MeshTerm(App):
                         textToShow = headerMessage + receivd["text"]
                         self.query_one("#received_messages").write(textToShow)
                         #self.query_one("#received_messages").write(repr(receivd))
-                term.emesh.msg_received = []
+
+                self.fmesh.mesh_network.msg_received = []
+
             except Exception as e:
                 self.change_value("#message_to_show", "ERROR: " + str(e))
+
+            time.sleep(1)
