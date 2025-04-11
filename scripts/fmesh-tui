@@ -1,0 +1,8 @@
+#!/usr/bin/env python3
+
+from fmesh.gui import MeshTerm
+
+
+if __name__ == "__main__":
+    app = MeshTerm()
+    app.run()

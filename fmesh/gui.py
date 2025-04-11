@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
-import json
 import os
+import json
 import time
+import threading
+
 from textual.app import App, ComposeResult
 from textual.widgets import Header, Footer
 from textual.widgets import Input, Label, Pretty, DataTable
@@ -9,13 +11,14 @@ from textual.widgets import Button, Static, RichLog, Sparkline, Checkbox
 from textual.containers import Horizontal, VerticalScroll
 from textual.validation import Function, Number, ValidationResult, Validator
 from textual import events, on
-import threading
-import term
+
 from dotenv import load_dotenv
+
+import fmesh.term as term
 
 
 class MeshTerm(App):
-    CSS_PATH = "meshterm.tcss"
+    # CSS_PATH = "meshterm.tcss"
 
     stopWatchdog = False
     messageToShow = None
@@ -236,8 +239,3 @@ class MeshTerm(App):
                 term.emesh.msg_received = []
             except Exception as e:
                 self.change_value("#message_to_show", "ERROR: " + str(e))
-
-
-if __name__ == "__main__":
-    app = MeshTerm()
-    app.run()

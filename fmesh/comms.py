@@ -1,13 +1,16 @@
+import time
+import json
+
+from hashlib import sha256
+from pubsub import pub
+
 import meshtastic
 import meshtastic.serial_interface
-from pubsub import pub
-import time
-# Helpers
-from hashlib import sha256
-import keys
-import json
 from meshtastic import LOCAL_ADDR
 from meshtastic.util import message_to_json
+
+import fmesh.keys as keys
+
 
 serial_port = None
 interface = None

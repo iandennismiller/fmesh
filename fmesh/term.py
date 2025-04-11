@@ -1,7 +1,9 @@
-import emesh
-import time
 import os
+import time
+
 from dotenv import load_dotenv
+
+import fmesh.comms as emesh
 
 # SECTION GUI Variables
 outputs = ""
