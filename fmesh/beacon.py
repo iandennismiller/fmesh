@@ -2,6 +2,12 @@ class FMeshBeacon:
     def __init__(self, fmesh):
         self.fmesh = fmesh
 
+        self.beacon_on = False
+        # Is set to false on GUI mode so that we can control the beaconing
+        self.beaconing_priority_settings = True
+
+        self.bnum = 0
+
     def check_beacon(self):
         # NOTE As the scenarios can include long range radios, we have low bandwidth.
         # By waiting N seconds between beacons, we ensure that we are not beaconing

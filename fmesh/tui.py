@@ -25,8 +25,6 @@ class FMeshTUI(App):
 
         self.fmesh = FMesh()
 
-        self.connected = False
-        self.connection_status = False
         self.radio_updated = False
         self.channels = set()
 
@@ -52,19 +50,18 @@ class FMeshTUI(App):
 
     def on_input_submitted(self, event: Input.Submitted) -> None:
         source = str(event.input.id).lower()
+
         if source == "msg":
             self.send()
-        else:
-            pass
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         """Handle button events."""
-        text_log = self.query_one("#main_log")
         action = str(event.button.id).lower()
 
         if action == "exit":
             self.fmesh.main_log.put("[SYSTEM] Exit button pressed")
             self.fmesh.halt.set()
+            self.main_loop_thread.join()
             sys.exit(1)
 
         elif action == "connect":
@@ -76,18 +73,18 @@ class FMeshTUI(App):
     def send(self):
         "Sending a message to the device"
 
-        channel, message_content = self.query_one("#input-field").value.split('#')
-
         try:
+            channel, message_content = self.query_one("#input-field").value.split('#')
             channel = int(channel)
         except:
             channel = 0
+            message_content = self.query_one("#input-field").value
 
         self.fmesh.mesh_network.send_raw(message_content, channel)
 
         self.query_one("#input-field").value = f"{channel}#"
         self.query_one("#main_log").write(f"[MESSAGE] #{channel} {message_content}")
-        self.query_one("#received_messages").write(f"[You] #{channel} > {message_content}")
+        self.query_one("#messages").write(f"[You] #{channel} > {message_content}")
     
     def connect_to_device(self):
         connect_button = self.query_one("#connect")
@@ -121,25 +118,22 @@ class FMeshTUI(App):
 
     def refresh_radio_info(self):
         "Populating the radio info"
-        if not self.radio_updated:
-            name = self.fmesh.mesh_network.interface.getShortName()
+        name = self.fmesh.mesh_network.interface.getShortName()
 
-            self.query_one("#radio_name").update(f"Connected to: {name}")
-            self.query_one("#send").disabled = False
+        self.query_one("#radio_name").update(f"Connected to: {name}")
+        self.query_one("#send").disabled = False
 
-            self.query_one("#radio_namebox").update(f"Radio NAME: {name}")
+        self.query_one("#radio_namebox").update(f"Name: {name}")
 
-            self.query_one("#radio_id").update(
-                f"Radio ID (long name): {str(self.fmesh.mesh_network.interface.getLongName())}"
-            )
+        self.query_one("#radio_id").update(
+            f"ID:   {str(self.fmesh.mesh_network.interface.getLongName())}"
+        )
 
-            self.query_one("#radio_user").update(
-                f"Radio USER: {str(self.fmesh.mesh_network.interface.getMyUser())}"
-            )
+        self.query_one("#radio_user").update(
+            f"User: {self.fmesh.mesh_network.interface.getMyUser()['id']}"
+        )
 
-            self.query_one("#input-field").value = f"0#"
-
-            self.radio_updated = True
+        self.query_one("#input-field").value = f"0#"
 
     def refresh_channels(self):
         "Populating the channels table"
@@ -164,7 +158,7 @@ class FMeshTUI(App):
                     msg["recipient"] = ""
 
                 msg_fmt = "[!{sender}{recipient}] #{channel}:{channel_name} > {text}"
-                self.query_one("#received_messages").write(msg_fmt.format(**msg))
+                self.query_one("#messages").write(msg_fmt.format(**msg))
 
     def main_loop(self):
         """Main i/o loop for the app."""
@@ -176,15 +170,21 @@ class FMeshTUI(App):
                 self.query_one("#main_log")
                 ready = True
             except Exception as e:
-                time.sleep(1)
+                time.sleep(0.25)
 
         self.query_one("#device").value = self.fmesh.config["FMESH_DEVICE"]
         self.query_one("#connect").disabled = False
 
         while not self.fmesh.halt.is_set():
             self.refresh_main_log()
+
             if self.fmesh.mesh_network.is_connected:
+
                 self.refresh_messages()
                 self.refresh_channels()
-                self.refresh_radio_info()
+
+                if not self.radio_updated:
+                    self.refresh_radio_info()
+                    self.radio_updated = True
+
             time.sleep(0.1)

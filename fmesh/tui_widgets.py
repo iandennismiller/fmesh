@@ -14,14 +14,26 @@ channels_table = DataTable(
 channels_table.add_column("#")
 channels_table.add_column("Channel name")
 
-received_messages = VerticalScroll(
-    #Sparkline([1, 2, 3, 3, 3, 3, 3], summary_function=min,),
+connection_info = VerticalScroll(
+    Label(""),
+    Label("RADIO INFO"),
+    Vertical(
+        Label(
+            "No radio connected",
+            id="radio_namebox"
+        ),
+        Label("", id="radio_id"),
+        Label("", id="radio_user"),
+        channels_table
+    ),
+)
+
+messages_window = VerticalScroll(
     Label("Received messages:"),
     RichLog(
-        id="received_messages",
+        id="messages",
         auto_scroll=True,
-    ),
-    classes="messages-panel"
+    )
 )
 
 send_message = Vertical(
@@ -38,14 +50,14 @@ send_message = Vertical(
 )
 
 connect_device = VerticalScroll(
-    Label("Enter the serial device to connect to: "),
+    Label("Radio serial device"),
     Input(
         id="device",
         value="/dev/ttyUSB0",
     ),
     Horizontal(
         Button(
-            "Connect to radio",
+            "Connect radio",
             id="connect",
             disabled=True,
         ),
@@ -53,21 +65,6 @@ connect_device = VerticalScroll(
             "Exit",
             id="exit"
         ),
-        # Checkbox("Enable beaconing", False, id="beaconingBox")
-    ),
-)
-
-connection_info = VerticalScroll(
-    Label(""),
-    Label("CONNECTED RADIO INFO"),
-    VerticalScroll(
-        Label(
-            "No radio connected",
-            id="radio_namebox"
-        ),
-        Label("", id="radio_id"),
-        Label("", id="radio_user"),
-        channels_table
     ),
 )
 
@@ -92,7 +89,7 @@ communication_panel = Vertical(
         id="radio_name"
     ),
     send_message,
-    received_messages,
+    messages_window,
     classes="right-top-panel"
 )
 

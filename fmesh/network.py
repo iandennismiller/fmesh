@@ -23,60 +23,67 @@ class FMeshNetwork:
 
         self.interface = None
 
-        self.serial_port = None
-
-        self.beacon_on = False
-        # Is set to false on GUI mode so that we can control the beaconing
-        self.beaconing_priority_settings = True
-
-        self.bnum = 0
-
-        self.localNode = None
+        self.local_node = None
 
         self.is_connected = False
 
-    def connect(self, serial_port=None):
-        self.serial_port = serial_port
+        # self.beacon = FMeshBeacon(fmesh)
 
-        # Connecting to the radio
+    def connect(self, serial_port=None):
+        "Connecting to the radio"
+
         pub.subscribe(self.on_receive, "meshtastic.receive")
         pub.subscribe(self.on_connection, "meshtastic.connection.established")
 
-        self.interface = meshtastic.serial_interface.SerialInterface(self.serial_port)
-        self.fmesh.main_log.put("[RADIO] Opening serial connection")
+        self.interface = meshtastic.serial_interface.SerialInterface(serial_port)
+
+    def get_channel_name(self, index):
+        try:
+            chan = self.local_node.getChannelByChannelIndex(index)
+            name = chan.settings.name
+            if chan.role == 1 and name == "":
+                name = "Default"
+            return name
+        except:
+            return None
+
+    ###
+    # event callbacks
 
     def on_receive(self, packet):
         "called when a packet arrives"
 
         try:
             decoded = packet["decoded"]
-
             decoded["from"] = packet["from"]
             decoded["to"] = packet["to"]
 
             try:
-                decoded["channel"] = packet["channel"]
+                decoded["channel"] = int(packet["channel"])
             except:
                 decoded["channel"] = 0
 
             decoded["channel_name"] = self.get_channel_name(decoded["channel"])
 
             self.fmesh.messages_log.put(decoded)
-            self.fmesh.main_log.put("[RECEIVED] Packet: " + str(decoded["portnum"]))
+            self.fmesh.main_log.put("[RECEIVED] " + str(decoded["portnum"]))
         except:
             self.fmesh.main_log.put("[ERROR] Packet: " + str(packet)[:90])
 
     def on_connection(self, interface, topic=pub.AUTO_TOPIC):
-        # called when we (re)connect to the radio
+        "called when we (re)connect to the radio"
+
         if not self.is_connected:
             self.fmesh.main_log.put("[RADIO] Connection established, starting to listen for packets...")
 
-            self.is_connected = True
             # self.interface.showInfo()
             # self.interface.showNodes()
-            self.localNode = self.interface.getNode(LOCAL_ADDR)
 
-    # INFO Monitor and, if applicable, start beaconing using encrypted messages or plaintext messages
+            self.local_node = self.interface.getNode(LOCAL_ADDR)
+            self.is_connected = True
+
+    ###
+    # sending messages
 
     def send_raw(self, raw, channel_id=0):
         self.fmesh.main_log.put("[SEND RAW] Sending raw: " + raw)
@@ -87,13 +94,3 @@ class FMeshNetwork:
         self.fmesh.main_log.put("[SEND RAW BYTES] Sending raw: " + raw)
         self.interface.sendBytes(raw)
         self.fmesh.main_log.put("[SEND RAW BYTES] Raw sent: " + raw)
-
-    def get_channel_name(self, index):
-        try:
-            chan = self.localNode.getChannelByChannelIndex(index)
-            name = chan.settings.name
-            if chan.role == 1 and name == "":
-                name = "Default"
-            return name
-        except:
-            return None
