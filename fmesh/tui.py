@@ -27,6 +27,7 @@ class FMeshTUI(App):
 
         self.connected = False
         self.connection_status = False
+        self.radio_updated = False
         self.channels = set()
 
         self.main_loop_thread = threading.Thread(
@@ -72,27 +73,21 @@ class FMeshTUI(App):
         elif action == "send":
             self.send()
 
-    # INFO Sending a message to the device
     def send(self):
-        if not self.fmesh.mesh_network.is_connected:
-            self.fmesh.main_log.put("CANNOT SEND MESSAGE: No connection")
-            return
+        "Sending a message to the device"
 
-        chan, textToSend = self.query_one("#msg").value.split('#')
+        channel, message_content = self.query_one("#input-field").value.split('#')
 
         try:
-            chan = int(chan)
+            channel = int(channel)
         except:
-            chan = 0
+            channel = 0
 
-        self.fmesh.mesh_network.send_raw(textToSend, chan)
+        self.fmesh.mesh_network.send_raw(message_content, channel)
 
-        _msg = f"MESSAGE SENT: #{chan} {textToSend}"
-        self.terminal_buffer.put(_msg)
-
-        self.query_one("#msg").value = f"{chan}#"
-        self.query_one("#main_log").write(_msg)
-        self.query_one("#received_messages").write(f"[You] #{chan} > " + textToSend)
+        self.query_one("#input-field").value = f"{channel}#"
+        self.query_one("#main_log").write(f"[MESSAGE] #{channel} {message_content}")
+        self.query_one("#received_messages").write(f"[You] #{channel} > {message_content}")
     
     def connect_to_device(self):
         connect_button = self.query_one("#connect")
@@ -124,6 +119,28 @@ class FMeshTUI(App):
             except Exception as e:
                 pass
 
+    def refresh_radio_info(self):
+        "Populating the radio info"
+        if not self.radio_updated:
+            name = self.fmesh.mesh_network.interface.getShortName()
+
+            self.query_one("#radio_name").update(f"Connected to: {name}")
+            self.query_one("#send").disabled = False
+
+            self.query_one("#radio_namebox").update(f"Radio NAME: {name}")
+
+            self.query_one("#radio_id").update(
+                f"Radio ID (long name): {str(self.fmesh.mesh_network.interface.getLongName())}"
+            )
+
+            self.query_one("#radio_user").update(
+                f"Radio USER: {str(self.fmesh.mesh_network.interface.getMyUser())}"
+            )
+
+            self.query_one("#input-field").value = f"0#"
+
+            self.radio_updated = True
+
     def refresh_channels(self):
         "Populating the channels table"
         chantable = self.query_one("#channels_table")
@@ -147,9 +164,7 @@ class FMeshTUI(App):
                     msg["recipient"] = ""
 
                 msg_fmt = "[!{sender}{recipient}] #{channel}:{channel_name} > {text}"
-                # msg_fmt = "{text}"
                 self.query_one("#received_messages").write(msg_fmt.format(**msg))
-                # self.query_one("#received_messages").write(msg["portnum"])
 
     def main_loop(self):
         """Main i/o loop for the app."""
@@ -167,95 +182,9 @@ class FMeshTUI(App):
         self.query_one("#connect").disabled = False
 
         while not self.fmesh.halt.is_set():
-            self.refresh_messages()
             self.refresh_main_log()
             if self.fmesh.mesh_network.is_connected:
+                self.refresh_messages()
                 self.refresh_channels()
+                self.refresh_radio_info()
             time.sleep(0.1)
-
-
-
-
-
-    def _watcher(self):
-        msg = "[SYSTEM] FMeshTUI initialized"
-        # self.fmesh.main_log.put(msg)
-        # self.query_one("#main_log").write(msg)
-
-        while not self.fmesh.halt.is_set():
-
-            # # Refreshing the environment variables and setting ours if needed
-            # try:
-            #     self.fmesh.mesh_network.beaconing_priority_settings = False
-            #     self.fmesh.mesh_network.beacon_on = self.query_one("#beaconingBox").value
-            #     self.print("[WATCHDOG] Refreshing environment variables...")
-            #     os.environ['BEACONING'] = str(self.fmesh.mesh_network.beacon_on)
-            #     self.print("[WATCHDOG] Environment variables refreshed: " + str(os.environ['BEACONING']))
-            # except Exception as e:
-            #     self.print("[WARNING] beaconingBox element is not reachable - this may be temporary.")
-
-            # Loading messages into the gui
-            try:
-                # if (term.outputs != term.last_output):
-                #     term.last_output = term.outputs
-                #     self.query_one("#main_log").write(term.outputs)
-
-                # # Priority to us here
-                # if (self.message_to_show):
-                #     _message_to_show = self.message_to_show
-                #     self.message_to_show = None
-                # else:
-                #     _message_to_show = self.message_to_show
-
-                self.change_value("#message_to_show", _message_to_show)
-
-                # If we are connected we should get our variables
-                if self.fmesh.mesh_network.is_connected and not self.connected:
-                    name = self.fmesh.mesh_network.interface.getShortName()
-
-                    self.query_one("#connect").disabled = False
-                    self.query_one("#connect").value = "Reconnect"
-                    self.query_one("#radio_name").update(f"Connected to: {name}")
-                    self.query_one("#send").disabled = False
-
-                    # Also updating our infos
-                    self.query_one("#radio_namebox").update(f"Radio NAME: {name}")
-                    self.query_one("#radio_id").update(
-                        f"Radio ID (long name): {str(self.fmesh.mesh_network.interface.getLongName())}"
-                    )
-                    self.query_one("#radio_user").update(
-                        f"Radio USER: {str(self.fmesh.mesh_network.interface.getMyUser())}"
-                    )
-
-                    chantable = self.query_one("#channels_table")
-                    for chan_id in range(8):
-                        chan_name = self.fmesh.mesh_network.get_channel_name(chan_id)
-                        if chan_name != None and len(chan_name) > 0:
-                            chantable.add_row(str(chan_id), chan_name)
-
-                    self.connected = True
-                    
-                # # Populating the received messages
-                # while not self.fmesh.mesh_network.messages_received.empty():
-                # # for received in self.fmesh.mesh_network.msg_received:
-                #     received = self.fmesh.mesh_network.messages_received.get()
-
-                #     if received["portnum"] == "TEXT_MESSAGE_APP":
-                #         #headerMessage = "[" + hex(received["from"]) + " -> " + hex(received["to"]) + "] > " 
-                #         sender = hex(received["from"])[2:]
-                #         to = hex(received["to"])[2:]
-                #         if to != "ffffffff":
-                #             to = " -> " + to
-                #         else:
-                #             to = ""
-                #         chan = received["channel"]
-                #         chan_name = received["channel_name"]
-                #         headerMessage = f"[!{sender}{to}] #{chan}:{chan_name} > "
-                #         textToShow = headerMessage + received["text"]
-                #         self.query_one("#received_messages").write(textToShow)
-                #         #self.query_one("#received_messages").write(repr(received))
-
-            except Exception as e:
-                self.change_value("#message_to_show", "ERROR: " + str(e))
-
-            time.sleep(1)

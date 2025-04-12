@@ -3,7 +3,7 @@ from textual.app import App, ComposeResult
 from textual.widgets import Header, Footer
 from textual.widgets import Input, Label, Pretty, DataTable
 from textual.widgets import Button, Static, RichLog, Sparkline, Checkbox
-from textual.containers import Horizontal, VerticalScroll
+from textual.containers import Horizontal, VerticalScroll, Vertical
 from textual.validation import Function, Number, ValidationResult, Validator
 
 
@@ -24,9 +24,9 @@ received_messages = VerticalScroll(
     classes="messages-panel"
 )
 
-send_message = Horizontal(
+send_message = Vertical(
     Input(
-        id="input-field", # or msg?
+        id="input-field",
         placeholder="Send something...",
         restrict=r"^$|[0-9]|[0-9]#.*"
     ),
@@ -80,13 +80,13 @@ main_log.styles.height = 6
 ###
 # Panels
 
-connection_panel = VerticalScroll(
+connection_panel = Vertical(
     connect_device,
     connection_info,
     classes="left-top-panel"
 )
 
-communication_panel = VerticalScroll(
+communication_panel = Vertical(
     Label(
         "Unknown Radio Name",
         id="radio_name"
