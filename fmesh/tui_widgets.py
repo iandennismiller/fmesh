@@ -15,85 +15,51 @@ channels_table.add_column("#")
 channels_table.add_column("Channel name")
 
 connection_info = VerticalScroll(
-    Label(""),
-    Label("RADIO INFO"),
     Vertical(
+        Label("LoRa:", id="radio_lora"),
+        Label("Name:", id="radio_longname"),
         Label(
-            "No radio connected",
-            id="radio_namebox"
+            "Short:",
+            id="radio_shortname"
         ),
-        Label("", id="radio_id"),
-        Label("", id="radio_user"),
-        channels_table
     ),
 )
 
-messages_window = VerticalScroll(
-    Label("Received messages:"),
-    RichLog(
-        id="messages",
-        auto_scroll=True,
-    )
+input_field = Input(
+    id="input-field",
+    restrict=r"^$|[0-9]|[0-9]#.*"
 )
+input_field.styles.width = "90%"
 
-send_message = Vertical(
-    Input(
-        id="input-field",
-        placeholder="Send something...",
-        restrict=r"^$|[0-9]|[0-9]#.*"
-    ),
+send_message = Horizontal(
+    input_field,
     Button(
         "Send",
         id="send",
         disabled=True
     ),
 )
+send_message.styles.height = 4
 
-connect_device = VerticalScroll(
-    Label("Radio serial device"),
-    Input(
-        id="device",
-        value="/dev/ttyUSB0",
-    ),
-    Horizontal(
-        Button(
-            "Connect radio",
-            id="connect",
-            disabled=True,
-        ),
-        Button(
-            "Exit",
-            id="exit"
-        ),
-    ),
-)
-
-main_log = RichLog(
-    id="main_log",
+messages = RichLog(
+    id="messages",
     auto_scroll=True
 )
-main_log.styles.height = 6
+# messages.styles.height = "70%"
 
-###
-# Panels
-
-connection_panel = Vertical(
-    connect_device,
+about = Horizontal(
+    VerticalScroll(channels_table),
     connection_info,
-    classes="left-top-panel"
-)
-
-communication_panel = Vertical(
-    Label(
-        "Unknown Radio Name",
-        id="radio_name"
+    Button(
+        "Exit",
+        id="exit"
     ),
-    send_message,
-    messages_window,
-    classes="right-top-panel"
 )
+about.styles.height = 4
 
-ui_panel = Horizontal(
-    connection_panel,
-    communication_panel,
+main_window = Vertical(
+    about,
+    messages,
+    Label(""),
+    send_message,
 )

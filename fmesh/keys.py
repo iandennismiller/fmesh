@@ -1,4 +1,5 @@
 import os
+import sys
 
 import rsa
 
@@ -24,25 +25,25 @@ class FMeshKeys:
         self.public_rsa_pem = None
 
         if os.path.exists("private.key"):
-            self.fmesh.main_log.put("[ED25519] Loading ed25519 private key...")
+            self.fmesh.messages.put("[ED25519] Loading ed25519 private key...")
             self.load()
         else:
-            self.fmesh.main_log.put("[ED25519] Creating ed25519 private key...")
+            self.fmesh.messages.put("[ED25519] Creating ed25519 private key...")
             self.create()
 
     def create(self):
         "ED25519 Creation"
-        self.fmesh.main_log.put("[ED25519] Generating ed25519 identity...")
+        self.fmesh.messages.put("[ED25519] Generating ed25519 identity...")
 
         self.private_key = ed25519.Ed25519PrivateKey.generate() 
-        self.fmesh.main_log.put(self.private_key)
+        self.fmesh.messages.put(self.private_key)
 
         self.private_bytes = self.private_key.private_bytes(
             encoding=serialization.Encoding.Raw,
             format=serialization.PrivateFormat.Raw,
             encryption_algorithm=serialization.NoEncryption()
         )
-        self.fmesh.main_log.put(self.private_bytes.hex())
+        self.fmesh.messages.put(self.private_bytes.hex())
 
         # Public Key Creation
         self.public_derivation()
@@ -61,18 +62,18 @@ class FMeshKeys:
         # Loading key
         try:
             self.load_bytes(self.private_bytes)
-            self.fmesh.main_log.put("[ED25519] Loaded ed25519 private key from file [+]")
+            self.fmesh.messages.put("[ED25519] Loaded ed25519 private key from file [+]")
         except Exception as e:
-            self.fmesh.main_log.put("[ED25519] Could not load ed25519 private key: [X]")
-            self.fmesh.main_log.put(e)
-            exit()
+            self.fmesh.messages.put("[ED25519] Could not load ed25519 private key: [X]")
+            self.fmesh.messages.put(e)
+            sys.exit(1)
             
     def load_bytes(self, private_bytes_provided: bytes):
         "INFO private_bytes_provided must be the same kind of data as the private_bytes (aka bytes)"
 
-        self.fmesh.main_log.put("[ED25519] Loading ed25519 private key from bytes... [*]")
+        self.fmesh.messages.put("[ED25519] Loading ed25519 private key from bytes... [*]")
         self.private_key = ed25519.Ed25519PrivateKey.from_private_bytes(private_bytes_provided)
-        self.fmesh.main_log.put("[ED25519] Loaded ed25519 private key from bytes [+]")
+        self.fmesh.messages.put("[ED25519] Loaded ed25519 private key from bytes [+]")
 
         # Public Key Creation
         self.public_derivation()
@@ -83,7 +84,7 @@ class FMeshKeys:
     def public_derivation(self):
         "INFO Deriving a public key from the private key"
 
-        self.fmesh.main_log.put("[ED25519] Generating ed25519 public key...[*]")
+        self.fmesh.messages.put("[ED25519] Generating ed25519 public key...[*]")
         self.public_key = self.private_key.public_key()
         
         self.public_bytes = self.public_key.public_bytes(
@@ -91,18 +92,18 @@ class FMeshKeys:
             format=serialization.PublicFormat.Raw,
         )
 
-        self.fmesh.main_log.put("[ED25519] We are: " + self.public_bytes.hex())
-        self.fmesh.main_log.put("[ED25519] Generated ed25519 public key [+]")
+        self.fmesh.messages.put("[ED25519] We are: " + self.public_bytes.hex())
+        self.fmesh.messages.put("[ED25519] Generated ed25519 public key [+]")
         
     def derive(self):
         "RSA Derivation"
-        self.fmesh.main_log.put("[RSA] Generating RSA keys from ed25519 identity... [*]")
+        self.fmesh.messages.put("[RSA] Generating RSA keys from ed25519 identity... [*]")
         self.private_rsa_key = rsa.generate_key(self.private_bytes.hex()) # So that the two are linked
         self.private_rsa_pem = self.private_rsa_key.exportKey("PEM")
         self.public_rsa_key = self.private_rsa_key.public_key()
         self.public_rsa_pem = self.public_rsa_key.exportKey("PEM")
 
-        self.fmesh.main_log.put("[RSA] Generated RSA keys from ed25519 identity [+]")
+        self.fmesh.messages.put("[RSA] Generated RSA keys from ed25519 identity [+]")
 
     def encrypt(self, message, public_key=None):
         "Encrypting a message (returning bytes)"
@@ -145,6 +146,6 @@ class FMeshKeys:
     def save(self):
         "ANCHOR Utilities"
 
-        self.fmesh.main_log.put("[ED25519] Saving ed25519 key...")
+        self.fmesh.messages.put("[ED25519] Saving ed25519 key...")
         with open("private.key", "wb") as f:
             f.write(self.private_bytes)
