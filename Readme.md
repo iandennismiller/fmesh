@@ -39,7 +39,7 @@ We can probably do better ... but this works for now.
 
 ## Example configuration
 
-To configure FMesh, create a file called `.env` based on the example.
+To configure FMesh, create a file called `.env` based on [the example](docs/example-env.conf).
 
 ```ini
 # linux
@@ -61,4 +61,4 @@ Use https://client.meshtastic.org or another interface to actually configure you
 
 ### License
 
-[MIT License](License.md)
+[MIT License](docs/License.md)
