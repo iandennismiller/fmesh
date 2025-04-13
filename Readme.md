@@ -4,10 +4,6 @@ FMesh is a text-mode Meshtastic chat interface built with Textual supporting mul
 
 ![Screenshot](docs/screenshot.png)
 
-## FMesh is a fork
-
-FMesh is based on [TheCookingSenpai's eMesh](https://github.com/TheCookingSenpai/emesh) with patches from [svofski](https://github.com/svofski/fmesh).
-
 ## Installation
 
 ```bash
@@ -59,6 +55,10 @@ To run on MacOS instead, uncomment that line.
 
 Use https://client.meshtastic.org or another interface to actually configure your LoRa radio.
 
-### License
+## License
 
 [MIT License](docs/License.md)
+
+## FMesh is a fork
+
+FMesh is based on [TheCookingSenpai's eMesh](https://github.com/TheCookingSenpai/emesh) with patches from [svofski](https://github.com/svofski/fmesh).
