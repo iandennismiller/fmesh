@@ -1,6 +1,6 @@
 # FMesh
 
-FMesh is a [Meshtastic](https://meshtastic.org) chat interface for text-mode consoles.
+FMesh is a [Meshtastic](https://meshtastic.org) TUI chat interface for text-mode consoles.
 
 ![Screenshot](docs/screenshot.png)
 
