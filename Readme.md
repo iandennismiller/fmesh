@@ -25,6 +25,8 @@ cp example-env.conf .env
 fmesh-tui
 ```
 
+Use ESC to exit.
+
 Channels are numbered 0-8. To send a message to a channel, prefix the message with the number and `#`:
 
 ```txt
