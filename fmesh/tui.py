@@ -75,6 +75,9 @@ class FMeshTUI(App):
             channel = 0
             message_content = self.query_one("#input-field").value
 
+        if not message_content:
+            return
+
         self.fmesh.mesh_network.send_text(message_content, channel)
 
         channel_name = self.fmesh.mesh_network.get_channel_name(channel)
