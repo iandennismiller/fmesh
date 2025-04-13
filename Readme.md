@@ -2,7 +2,7 @@
 
 FMesh is a text-mode Meshtastic chat interface built with Textual supporting multiple channels.
 
-FMesh is based on [eMesh](https://github.com/TheCookingSenpai/emesh) by TheCookingSenpai.
+FMesh is based on [TheCookingSenpai's eMesh](https://github.com/TheCookingSenpai/emesh) with patches from [svofski](https://github.com/svofski/fmesh).
 
 ## Installation
 
