@@ -5,7 +5,7 @@ from queue import Queue
 from dotenv import dotenv_values
 
 from .network import FMeshNetwork
-from .keys import FMeshKeys
+# from .keys import FMeshKeys
 
 
 class FMesh:
@@ -19,7 +19,7 @@ class FMesh:
         self.config = dotenv_values(".env")
         self.halt = threading.Event()
 
-        self.keys = FMeshKeys(self)
+        # self.keys = FMeshKeys(self)
         self.mesh_network = FMeshNetwork(self)
 
         self.messages.put("[SYSTEM] Connecting to Meshtastic")

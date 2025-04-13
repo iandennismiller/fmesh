@@ -67,8 +67,11 @@ class FMeshTUI(App):
 
         self.fmesh.mesh_network.send_text(message_content, channel)
 
+        channel_name = self.fmesh.mesh_network.get_channel_name(channel)
+        msg = f"/{channel}/{channel_name}/You     : {message_content}"
+        self.query_one("#messages").write(msg)
+
         self.query_one("#input-field").value = f"{channel}#"
-        self.query_one("#messages").write(f"[You] #{channel} > {message_content}")
     
     def refresh_radio_info(self):
         "Populating the radio info"
@@ -111,7 +114,7 @@ class FMeshTUI(App):
                     if msg["recipient"] == "ffffffff":
                         msg["recipient"] = ""
 
-                    msg_fmt = "[!{sender}{recipient}] #{channel}:{channel_name} > {text}"
+                    msg_fmt = "/{channel}/{channel_name}/{sender}: {text}"
                     self.query_one("#messages").write(msg_fmt.format(**msg))
 
     def wait_for_ready(self):

@@ -7,6 +7,9 @@ from textual.containers import Horizontal, VerticalScroll, Vertical
 from textual.validation import Function, Number, ValidationResult, Validator
 
 
+###
+# about
+
 channels_table = DataTable(
     id="channels_table",
     cursor_type="row"
@@ -25,28 +28,6 @@ connection_info = VerticalScroll(
     ),
 )
 
-input_field = Input(
-    id="input-field",
-    restrict=r"^$|[0-9]|[0-9]#.*"
-)
-input_field.styles.width = "90%"
-
-send_message = Horizontal(
-    input_field,
-    Button(
-        "Send",
-        id="send",
-        disabled=True
-    ),
-)
-send_message.styles.height = 4
-
-messages = RichLog(
-    id="messages",
-    auto_scroll=True
-)
-# messages.styles.height = "70%"
-
 about = Horizontal(
     VerticalScroll(channels_table),
     connection_info,
@@ -55,11 +36,39 @@ about = Horizontal(
         id="exit"
     ),
 )
-about.styles.height = 4
+about.styles.height = 3
+
+###
+# messages
+
+input_field = Input(
+    id="input-field",
+    restrict=r"^$|[0-9]|[0-9]#.*"
+)
+input_field.styles.width = "90%"
+
+input_ui = Horizontal(
+    input_field,
+    Button(
+        "Send",
+        id="send",
+        disabled=True
+    ),
+)
+input_ui.styles.height = 4
+
+messages = RichLog(
+    id="messages",
+    auto_scroll=True
+)
+
+###
+# main window
 
 main_window = Vertical(
     about,
+    Label(""),
     messages,
     Label(""),
-    send_message,
+    input_ui,
 )
