@@ -4,17 +4,28 @@ import threading
 
 from textual import events, on
 from textual.app import App, ComposeResult
+from textual.binding import Binding
 from textual.widgets import Header, Footer, Input, Button
-
+from textual.css.query import NoMatches
 
 from . import FMesh
+from .tui_widgets import get_main_window, CSS as TUI_CSS
 
 
 class FMeshTUI(App):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    CSS = TUI_CSS
 
-        self.radio_updated = False
+    BINDINGS = [
+        Binding("escape", "shutdown"),
+    ]
+
+    def action_shutdown(self) -> None:
+        self.shutdown()
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(ansi_color=True, *args, **kwargs)
+
+        self.connected = False
         self.channels = set()
 
         self.fmesh = FMesh()
@@ -27,45 +38,25 @@ class FMeshTUI(App):
 
     def compose(self) -> ComposeResult:
         "Assemble the UI from widgets and panels"
-        from .tui_widgets import main_window
+        
         yield Header()
         yield Footer()
-        yield main_window
+        yield get_main_window(self)
 
-    def shutdown(self, event) -> None:
+    def shutdown(self) -> None:
         self.fmesh.halt.set()
         self.main_loop_thread.join()
         self.exit()
-
-    def on_key(self, event: events.Key) -> None:
-        """Handle key events."""
-
-        if event.key == "enter":
-            self.send()
-
-        elif event.key == "escape":
-            self.fmesh.messages.put("[SYSTEM] Escape pressed")
-            self.shutdown(event)
-
-    def on_input_submitted(self, event: Input.Submitted) -> None:
-        source = str(event.input.id).lower()
-
-        if source == "msg":
-            self.send()
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         """Handle button events."""
         
         action = str(event.button.id).lower()
 
-        if action == "exit":
-            self.fmesh.messages.put("[SYSTEM] Exit button pressed")
-            self.shutdown(event)
+        if action == "send":
+            self.send_message()
 
-        elif action == "send":
-            self.send()
-
-    def send(self):
+    def send_message(self):
         "Sending a message to the device"
 
         try:
@@ -95,13 +86,13 @@ class FMeshTUI(App):
 
         self.sub_title = f"{short_name} ({lora})"
 
-        self.query_one("#send").disabled = False
-        self.query_one("#input-field").value = f"0#"
-
     def refresh_channels(self):
         "Populating the channels table"
 
-        chantable = self.query_one("#channels-table")
+        try:
+            chantable = self.query_one("#channels-table")
+        except NoMatches:
+            return
 
         for chan_id in range(8):
             chan_name = self.fmesh.mesh_network.get_channel_name(chan_id)
@@ -140,6 +131,18 @@ class FMeshTUI(App):
             except Exception as e:
                 time.sleep(0.25)
 
+    def on_connect(self):
+        # ensures this runs only once when the radio is connected
+        self.refresh_radio_info()
+
+        # focus on the input field and set default channel
+        channel = self.fmesh.config.get("FMESH_CHANNEL", 0)
+        self.query_one("#input-field").value = f"{channel}#"
+        self.query_one("#input-field").focus()
+        self.query_one("#send").disabled = False
+
+        self.connected = True
+
     def main_loop(self):
         """Main i/o loop for the app."""
 
@@ -148,44 +151,11 @@ class FMeshTUI(App):
         while not self.fmesh.halt.is_set():
             self.refresh_messages()
 
-            if self.fmesh.mesh_network.is_connected:
+            if self.fmesh.mesh_network.connected:
                 self.refresh_channels()
 
-                if not self.radio_updated:
-                    self.refresh_radio_info()
-                    self.radio_updated = True
+                # if the radio info has not been updated yet
+                if not self.connected:
+                    self.on_connect()
 
             time.sleep(0.1)
-
-    CSS = """
-    Screen {
-        layout: vertical;
-        # grid-size: 2;
-        # grid-gutter: 2;
-        # padding: 2;
-    }
-
-    #about {
-        height: 3;
-    }
-
-    #input-ui {
-        height: 3;
-    }
-
-    #input-field {
-        width: 11fr;
-    }
-
-    #send {
-        width: 1fr;
-    }
-
-    #exit {
-        width: 1fr;
-    }
-
-    #channels-table-container {
-        width: 11fr;
-    }
-    """

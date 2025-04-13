@@ -19,7 +19,7 @@ class FMeshNetwork:
 
         self.interface = None
         self.local_node = None
-        self.is_connected = False
+        self.connected = False
 
     def connect(self, device=None):
         "Connecting to the radio device"
@@ -53,14 +53,14 @@ class FMeshNetwork:
     def on_connection(self, interface, topic=pub.AUTO_TOPIC):
         "called when we (re)connect to the radio"
 
-        if not self.is_connected:
+        if not self.connected:
             self.fmesh.messages.put("[RADIO] Meshtastic connected")
 
             # self.interface.showInfo()
             # self.interface.showNodes()
 
             self.local_node = self.interface.getNode(LOCAL_ADDR)
-            self.is_connected = True
+            self.connected = True
 
     def on_receive(self, packet):
         "called when a packet arrives"
