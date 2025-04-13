@@ -29,12 +29,23 @@ class FMeshTUI(App):
         "Assemble the UI from widgets and panels"
         from .tui_widgets import main_window
         yield Header()
-        yield main_window
         yield Footer()
+        yield main_window
+
+    def shutdown(self, event) -> None:
+        self.fmesh.halt.set()
+        self.main_loop_thread.join()
+        self.exit()
 
     def on_key(self, event: events.Key) -> None:
         """Handle key events."""
-        pass
+
+        if event.key == "enter":
+            self.send()
+
+        elif event.key == "escape":
+            self.fmesh.messages.put("[SYSTEM] Escape pressed")
+            self.shutdown(event)
 
     def on_input_submitted(self, event: Input.Submitted) -> None:
         source = str(event.input.id).lower()
@@ -44,13 +55,12 @@ class FMeshTUI(App):
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         """Handle button events."""
+        
         action = str(event.button.id).lower()
 
         if action == "exit":
             self.fmesh.messages.put("[SYSTEM] Exit button pressed")
-            self.fmesh.halt.set()
-            self.main_loop_thread.join()
-            sys.exit(1)
+            self.shutdown(event)
 
         elif action == "send":
             self.send()
@@ -80,16 +90,15 @@ class FMeshTUI(App):
         long_name = self.fmesh.mesh_network.interface.getLongName()
         lora = self.fmesh.mesh_network.interface.getMyUser()["id"]
 
+        self.sub_title = f"{short_name} ({lora})"
+
         self.query_one("#send").disabled = False
         self.query_one("#input-field").value = f"0#"
-        self.query_one("#radio_lora").update(f"LoRa:  {lora}")
-        self.query_one("#radio_longname").update(f"Name:  {long_name}")
-        self.query_one("#radio_shortname").update(f"Short: {short_name}")
 
     def refresh_channels(self):
         "Populating the channels table"
 
-        chantable = self.query_one("#channels_table")
+        chantable = self.query_one("#channels-table")
 
         for chan_id in range(8):
             chan_name = self.fmesh.mesh_network.get_channel_name(chan_id)
@@ -144,3 +153,36 @@ class FMeshTUI(App):
                     self.radio_updated = True
 
             time.sleep(0.1)
+
+    CSS = """
+    Screen {
+        layout: vertical;
+        # grid-size: 2;
+        # grid-gutter: 2;
+        # padding: 2;
+    }
+
+    #about {
+        height: 3;
+    }
+
+    #input-ui {
+        height: 3;
+    }
+
+    #input-field {
+        width: 11fr;
+    }
+
+    #send {
+        width: 1fr;
+    }
+
+    #exit {
+        width: 1fr;
+    }
+
+    #channels-table-container {
+        width: 11fr;
+    }
+    """

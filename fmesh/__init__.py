@@ -20,6 +20,7 @@ class FMesh:
         self.halt = threading.Event()
 
         # self.keys = FMeshKeys(self)
+
         self.mesh_network = FMeshNetwork(self)
 
         self.messages.put("[SYSTEM] Connecting to Meshtastic")
@@ -27,4 +28,4 @@ class FMesh:
 
         # self.beacon = FMeshBeacon(fmesh)
 
-        self.messages.put("[SYSTEM] FMesh Initialized")
+        self.messages.put("[SYSTEM] FMesh Initialized (still waiting for radio)")
