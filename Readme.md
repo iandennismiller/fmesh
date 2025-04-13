@@ -27,6 +27,8 @@ fmesh-tui
 
 Use ESC to exit.
 
+## Send a message
+
 Channels are numbered 0-8. To send a message to a channel, prefix the message with the number and `#`:
 
 ```txt
@@ -52,6 +54,10 @@ FMESH_CHANNEL=0
 
 The example demonstrates a Linux configuration.
 To run on MacOS instead, uncomment that line.
+
+### Configuring your LoRa device
+
+Use https://client.meshtastic.org or another interface to actually configure your LoRa radio.
 
 ### License
 
