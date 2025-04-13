@@ -37,8 +37,7 @@ We can probably do better ... but this works for now.
 
 ## Example configuration
 
-The following example is for Linux.
-To run on MacOS instead, uncomment that line.
+To configure FMesh, create a file called `.env` based on the example.
 
 ```ini
 # linux
@@ -50,6 +49,9 @@ FMESH_DEVICE=/dev/ttyUSB0
 # channel to start on by default
 FMESH_CHANNEL=0
 ```
+
+The example demonstrates a Linux configuration.
+To run on MacOS instead, uncomment that line.
 
 ### License
 
