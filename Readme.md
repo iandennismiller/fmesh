@@ -12,14 +12,26 @@ FMesh is based on [TheCookingSenpai's eMesh](https://github.com/TheCookingSenpai
 
 ```bash
 git clone https://github.com/iandennismiller/fmesh
+cd fmesh
 pip install .
 ```
 
-## Usage
+## Quickstart
+
+Run the following in the `fmesh` directory.
 
 ```bash
+cp example-env.conf .env
 fmesh-tui
 ```
+
+Channels are numbered 0-8. To send a message to a channel, prefix the message with the number and `#`:
+
+```txt
+1# This message is being sent to channel 1.
+```
+
+We can probably do better ... but this works for now.
 
 ## Example configuration
 
