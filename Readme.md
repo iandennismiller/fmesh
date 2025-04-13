@@ -1,6 +1,6 @@
 # FMesh
 
-FMesh is a text-mode Meshtastic chat interface built with Textual supporting multiple channels.
+FMesh is a [Meshtastic](https://meshtastic.org) chat interface for text-mode consoles.
 
 ![Screenshot](docs/screenshot.png)
 
