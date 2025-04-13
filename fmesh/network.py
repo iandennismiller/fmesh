@@ -41,7 +41,10 @@ class FMeshNetwork:
         pub.subscribe(self.on_receive, "meshtastic.receive")
         pub.subscribe(self.on_connection, "meshtastic.connection.established")
 
-        self.interface = SerialInterface(device)
+        try:
+            self.interface = SerialInterface(device)
+        except FileNotFoundError:
+            self.fmesh.messages.put(f"[ERROR] Device not found: {device}")
 
     def on_connection(self, interface, topic=pub.AUTO_TOPIC):
         "called when we (re)connect to the radio"

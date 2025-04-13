@@ -9,7 +9,7 @@ from textual.widgets import Header, Footer, Input, Button
 from textual.css.query import NoMatches
 
 from . import FMesh
-from .tui_widgets import get_main_window, CSS as TUI_CSS
+from .widgets import get_main_window, CSS as TUI_CSS
 
 
 class FMeshTUI(App):
@@ -120,16 +120,27 @@ class FMeshTUI(App):
                     msg_fmt = "/{channel}/{channel_name}/{sender}: {text}"
                     self.query_one("#messages").write(msg_fmt.format(**msg))
 
-    def wait_for_ready(self):
+    def wait_for_textual(self, wait=1):
         "wait for the app to be ready"
 
         ready = False
+        start_time = time.time()
         while not ready:
             try:
                 self.query_one("#messages")
-                ready = True
+                return True
             except Exception as e:
+                if time.time() - start_time > wait:
+                    return False
                 time.sleep(0.25)
+
+    def wait_for_device(self, wait=2):
+        start_time = time.time()
+        while not self.fmesh.mesh_network.connected:
+            if time.time() - start_time > wait:
+                return False
+            time.sleep(0.1)
+        return True
 
     def on_connect(self):
         # ensures this runs only once when the radio is connected
@@ -146,7 +157,17 @@ class FMeshTUI(App):
     def main_loop(self):
         """Main i/o loop for the app."""
 
-        self.wait_for_ready()
+        if not self.wait_for_textual():
+            self.fmesh.messages.put("[SYSTEM] Textual not ready")
+            self.refresh_messages()
+            return
+
+        self.refresh_messages()
+        
+        if not self.wait_for_device():
+            self.fmesh.messages.put("[SYSTEM] Could not initialize radio device")
+            self.refresh_messages()
+            return
 
         while not self.fmesh.halt.is_set():
             self.refresh_messages()

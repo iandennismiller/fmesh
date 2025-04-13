@@ -18,7 +18,6 @@ Screen {
 
 #input-field {
     width: 1fr;
-    border: lightgray;
 }
 
 #send {
