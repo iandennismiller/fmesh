@@ -4,6 +4,12 @@ FMesh is a [Meshtastic](https://meshtastic.org) chat interface for text-mode con
 
 ![Screenshot](docs/screenshot.png)
 
+## Why?
+
+Almost any computer running Linux can now be used as an interface for Meshtastic.
+
+A lower-power compute platform can utilize Meshtastic AND preserve battery runtime by staying in text mode.
+
 ## Quickstart
 
 ### Install
