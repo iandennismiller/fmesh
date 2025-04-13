@@ -1,16 +1,9 @@
-import time
-import json
 import threading
-
-from queue import Queue
 
 from pubsub import pub
 
-import meshtastic
-import meshtastic.serial_interface
-
 from meshtastic import LOCAL_ADDR
-from meshtastic.util import message_to_json
+from meshtastic.serial_interface import SerialInterface
 
 
 class FMeshNetwork:
@@ -48,7 +41,7 @@ class FMeshNetwork:
         pub.subscribe(self.on_receive, "meshtastic.receive")
         pub.subscribe(self.on_connection, "meshtastic.connection.established")
 
-        self.interface = meshtastic.serial_interface.SerialInterface(device)
+        self.interface = SerialInterface(device)
 
     def on_connection(self, interface, topic=pub.AUTO_TOPIC):
         "called when we (re)connect to the radio"
