@@ -157,14 +157,14 @@ class FMeshTUI(App):
     def main_loop(self):
         """Main i/o loop for the app."""
 
-        if not self.wait_for_textual():
+        if not self.wait_for_textual(2):
             self.fmesh.messages.put("[SYSTEM] Textual not ready")
             self.refresh_messages()
             return
 
         self.refresh_messages()
         
-        if not self.wait_for_device():
+        if not self.wait_for_device(10):
             self.fmesh.messages.put("[SYSTEM] Could not initialize radio device")
             self.refresh_messages()
             return
