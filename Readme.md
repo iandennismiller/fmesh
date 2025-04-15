@@ -10,6 +10,8 @@ Almost any computer running Linux can now be used as an interface for Meshtastic
 
 A lower-power compute platform can utilize Meshtastic AND preserve battery runtime by staying in text mode.
 
+![Outdoors](docs/outdoors.jpg)
+
 ## Quickstart
 
 ### Install
