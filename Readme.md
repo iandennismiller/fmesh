@@ -12,6 +12,11 @@ A lower-power compute platform can utilize Meshtastic AND preserve battery runti
 
 ![Outdoors](docs/outdoors.jpg)
 
+## Other Meshtastic TUIs
+
+Also see [contact](https://github.com/pdxlocations/contact) for a fuller Meshtastic TUI.
+Not sure how it looks on a tiny screen yet - but otherwise, `contact` is awesome!
+
 ## Quickstart
 
 ### Install
